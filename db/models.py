@@ -1,5 +1,3 @@
-from django.utils import timezone
-
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -22,13 +20,14 @@ class Actor(models.Model):
 
 
 class Movie(models.Model):
-    class Meta:
-        indexes = [models.Index(fields=["title"])]
 
     title = models.CharField(max_length=255)
     description = models.TextField()
     actors = models.ManyToManyField(to=Actor, related_name="movies")
     genres = models.ManyToManyField(to=Genre, related_name="movies")
+
+    class Meta:
+        indexes = [models.Index(fields=["title"])]
 
     def __str__(self) -> str:
         return self.title
@@ -61,20 +60,32 @@ class MovieSession(models.Model):
 
 
 class Order(models.Model):
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
+
     class Meta:
         ordering = ["-created_at"]
 
-    created_at = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
     def __str__(self) -> str:
-        return f"{self.created_at}"
+        return f"<Order: {self.created_at}>"
 
 
 class Ticket(models.Model):
+
+    movie_session = models.ForeignKey(to=MovieSession,
+                                      on_delete=models.CASCADE,
+                                      related_name="tickets")
+    order = models.ForeignKey(to=Order,
+                              on_delete=models.CASCADE,
+                              related_name="tickets")
+    row = models.IntegerField()
+    seat = models.IntegerField()
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -82,15 +93,9 @@ class Ticket(models.Model):
             )
         ]
 
-    movie_session = models.ForeignKey(to=MovieSession,
-                                      on_delete=models.CASCADE)
-    order = models.ForeignKey(to=Order, on_delete=models.CASCADE)
-    row = models.IntegerField()
-    seat = models.IntegerField()
-
     def __str__(self) -> str:
-        return f"{str(self.movie_session)}" \
-               f" (row: {self.row}, seat: {self.seat})"
+        return f"<Ticket: {str(self.movie_session)}" \
+               f" (row: {self.row}, seat: {self.seat})>"
 
     def clean(self) -> None:
         rows = self.movie_session.cinema_hall.rows

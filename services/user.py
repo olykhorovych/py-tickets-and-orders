@@ -11,17 +11,19 @@ def create_user(
     first_name: str | None = None,
     last_name: str | None = None,
 ) -> User:
+    fields_dict = {
+        "email": email,
+        "first_name": first_name,
+        "last_name": last_name,
+    }
+    kwargs_dict = {
+        param: val for param, val in fields_dict.items() if val is not None
+    }
     user = User.objects.create_user(
         username=username,
         password=password,
+        **kwargs_dict
     )
-    if first_name:
-        user.first_name = first_name
-    if last_name:
-        user.last_name = last_name
-    if email:
-        user.email = email
-    user.save()
     return user
 
 
