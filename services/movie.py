@@ -34,7 +34,7 @@ def create_movie(
     genres_ids: list = None,
     actors_ids: list = None,
 ) -> Movie:
-    movie = Movie(
+    movie = Movie.objects.create(
         title=movie_title,
         description=movie_description,
     )
